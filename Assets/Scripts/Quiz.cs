@@ -7,13 +7,13 @@ using UnityEngine.UI;
 public class Quiz : MonoBehaviour
 {
     [Header("Questions")]
-    [SerializeField] private QuestionSO question;
+    QuestionSO currentQuestion;
     [SerializeField] TextMeshProUGUI questionText;
+    [SerializeField] private List<QuestionSO> questionList = new List<QuestionSO>();
 
     [Header("Answers")]
     [SerializeField] private GameObject[] answerButtons = new GameObject[4];
-    int correctAnswerIndex;
-    bool hasAnsweredEarly;
+    bool hasAnsweredEarly = true;
 
     [Header("Button Sprites")]
     [SerializeField] private Sprite defaultAnswerSprite, correctAnswerSprite;
@@ -22,11 +22,16 @@ public class Quiz : MonoBehaviour
     [SerializeField] private Image timerImage;
     Timer timer;
 
+    [Header("Score")]
+    [SerializeField] private TextMeshProUGUI scoreText;
+    Score score;
+
     void Start()
     {
         timer = FindObjectOfType<Timer>();
-        questionText.text = question.GetQuestion();
-        DisplayQuestion();       
+        score = FindObjectOfType<Score>();
+        //questionText.text = currentQuestion.GetQuestion();
+        //DisplayQuestion();
     }
 
     private void Update()
@@ -49,16 +54,17 @@ public class Quiz : MonoBehaviour
     {
         Image btnImage;
 
-        if (btnIndex == question.GetCorrectAnswer())
+        if (btnIndex == currentQuestion.GetCorrectAnswer())
         {
             questionText.text = "Correct";
             btnImage = answerButtons[btnIndex].GetComponent<Image>();
             btnImage.sprite = correctAnswerSprite;
+            score.AddCorrectAnswer();
         }
         else
         {
-            int answerIndex = question.GetCorrectAnswer();
-            questionText.text = "Sorry but the correct answer is: \n" + question.GetAnswer(answerIndex);
+            int answerIndex = currentQuestion.GetCorrectAnswer();
+            questionText.text = "Sorry but the correct answer is: \n" + currentQuestion.GetAnswer(answerIndex);
 
             btnImage = answerButtons[answerIndex].GetComponent<Image>();
             btnImage.sprite = correctAnswerSprite;
@@ -71,13 +77,31 @@ public class Quiz : MonoBehaviour
         DisplayAnswer(btnIndex);
         SetButtonState(false);
         timer.CancelTimer();
+        scoreText.text = "Score: " + score.CalculateScore() + "%";
     }
 
     public void GetNextQuestion()
     {
-        SetButtonState(true);
-        SetDefaultButtonSprite();
-        DisplayQuestion();
+        if(questionList.Count > 0)
+        {
+            SetButtonState(true);
+            SetDefaultButtonSprite();
+            GetRandomQuestion();
+            DisplayQuestion();
+            score.AddQuestionsSeen();
+        }
+    }
+
+    void GetRandomQuestion()
+    {
+        int index = Random.Range(0, questionList.Count);
+        currentQuestion = questionList[index];
+
+        // after picking the question we remove it from list
+        if(questionList.Contains(currentQuestion))
+        {
+            questionList.Remove(currentQuestion);
+        }
     }
 
     public void DisplayQuestion()
@@ -85,8 +109,10 @@ public class Quiz : MonoBehaviour
         for (int i = 0; i < answerButtons.Length; i++)
         {
             TextMeshProUGUI buttonText = answerButtons[i].GetComponentInChildren<TextMeshProUGUI>();
-            buttonText.text = question.GetAnswer(i);
+            buttonText.text = currentQuestion.GetAnswer(i);
         }
+
+        questionText.text = currentQuestion.GetQuestion();
     }
 
     // For disabling/enabling interactions with buttons
