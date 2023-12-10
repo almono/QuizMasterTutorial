@@ -31,7 +31,7 @@ public class Quiz : MonoBehaviour
 
     public bool isComplete;
 
-    void Start()
+    void Awake()
     {
         timer = FindObjectOfType<Timer>();
         score = FindObjectOfType<Score>();
@@ -48,6 +48,12 @@ public class Quiz : MonoBehaviour
 
         if(timer.loadNextQuestion)
         {
+            if (progressSlider.value == progressSlider.maxValue)
+            {
+                isComplete = true;
+                return;
+            }
+
             hasAnsweredEarly = false;
             GetNextQuestion();
             timer.loadNextQuestion = false;
@@ -86,11 +92,6 @@ public class Quiz : MonoBehaviour
         SetButtonState(false);
         timer.CancelTimer();
         scoreText.text = "Score: " + score.CalculateScore() + "%";
-
-        if(progressSlider.value == progressSlider.maxValue)
-        {
-            isComplete = true;
-        }
     }
 
     public void GetNextQuestion()
